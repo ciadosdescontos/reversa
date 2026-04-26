@@ -3,6 +3,7 @@
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import chalk from 'chalk';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8'));
@@ -19,8 +20,17 @@ const commands = {
   'export-diagrams':  () => import('../lib/commands/export-diagrams.js'),
 };
 
+const green = chalk.hex('#00FF00');
+
 if (!command || command === '--help' || command === '-h') {
-  console.log(`
+  console.log(green(`
+______
+| ___ \\
+| |_/ /_____   _____ _ __ ___  __ _
+|    // _ \\ \\ / / _ \\ '__/ __|/ _\` |
+| |\\ \\  __/\\ V /  __/ |  \\__ \\ (_| |
+\\_| \\_\\___| \\_/ \\___|_|  |___/\\__,_|
+`) + `
   reversa v${pkg.version}
 
   Uso: npx reversa <comando>
