@@ -43,6 +43,17 @@ O instalador vai:
 >
 > O instalador cria apenas arquivos novos (`CLAUDE.md`, `AGENTS.md`, `.agents/skills/`, etc.) e **jamais modifica ou apaga qualquer arquivo já existente** no seu projeto. Durante a análise, os agentes operam sob uma diretiva estrita e inviolável: **toda escrita é restrita a `.reversa/` e `_reversa_sdd/`** — nenhum outro arquivo do seu projeto é tocado.
 
+> [!CAUTION]
+> ### 💾 Faça backup do projeto antes de começar
+>
+> Embora o Reversa nunca modifique seus arquivos, agentes de IA podem cometer erros. **Recomendamos fortemente que você:**
+>
+> 1. **Versione o projeto no Git** — certifique-se de que todos os arquivos estão commitados antes de iniciar a análise
+> 2. **Tenha o repositório no GitHub** (ou GitLab, Bitbucket) — assim você tem uma cópia remota segura
+> 3. **Faça uma cópia local da pasta** — um simples `cp -r meu-projeto meu-projeto-backup` já protege contra qualquer imprevisto
+>
+> Se algo inesperado acontecer durante a análise, você poderá restaurar o estado original com `git restore .` ou a partir da cópia de segurança.
+
 > [!WARNING]
 > 🔑 **O Reversa não solicita, não armazena e não transmite chaves de API de nenhum serviço de LLM.** Toda a inteligência é delegada ao agente de IA já presente no seu ambiente (Claude Code, Codex, Cursor, etc.) — sem dependências externas de autenticação.
 
