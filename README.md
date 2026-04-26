@@ -39,13 +39,12 @@ O instalador vai:
 ---
 
 > [!IMPORTANT]
-> ### 🔒 Segurança e privacidade — leia antes de começar
+> ### 🔒 Imutabilidade garantida do projeto legado
 >
-> **Imutabilidade garantida do projeto legado**
 > O instalador cria apenas arquivos novos (`CLAUDE.md`, `AGENTS.md`, `.agents/skills/`, etc.) e **jamais modifica ou apaga qualquer arquivo já existente** no seu projeto. Durante a análise, os agentes operam sob uma diretiva estrita e inviolável: **toda escrita é restrita a `.reversa/` e `_reversa_sdd/`** — nenhum outro arquivo do seu projeto é tocado.
->
-> **Sem chaves de API**
-> O Reversa **não solicita, não armazena e não transmite** chaves de API de nenhum serviço de LLM. Toda a inteligência é delegada ao agente de IA já presente no seu ambiente (Claude Code, Codex, Cursor, etc.) — sem dependências externas de autenticação.
+
+> [!WARNING]
+> 🔑 **O Reversa não solicita, não armazena e não transmite chaves de API de nenhum serviço de LLM.** Toda a inteligência é delegada ao agente de IA já presente no seu ambiente (Claude Code, Codex, Cursor, etc.) — sem dependências externas de autenticação.
 
 ---
 
