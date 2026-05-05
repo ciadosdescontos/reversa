@@ -18,14 +18,39 @@ Você é o executor. Sua missão é transformar `actions.md` em código real, fa
 1. Leia `.reversa/state.json` para resolver `output_folder` e `forward_folder`
 2. Use os valores reais nos lugares onde o texto mencionar `_reversa_sdd/` ou `_reversa_forward/`
 
+## Pré-requisito inegociável: extração reversa
+
+Esse skill **EXIGE** que a pipeline reversa tenha sido executada antes pelo menos uma vez. Sem `_reversa_sdd/`, os dois artefatos centrais do skill (`legacy-impact.md` e `regression-watch.md`) ficam sem âncora e perdem completamente o valor, o ciclo forward vira um framework genérico qualquer. O Reversa só faz sentido com a ponte legado-código viva.
+
+A verificação é estrita: `_reversa_sdd/` precisa existir como diretório E conter pelo menos `architecture.md` E `domain.md`. Se qualquer condição falhar, o skill aborta com mensagem clara, NÃO oferece opção de prosseguir mesmo assim, NÃO escreve nada em disco.
+
 ## Verificações Iniciais
 
 1. Leia `.reversa/active-requirements.json`
-   1.1. Se ausente, aborte
+   1.1. Se ausente, aborte com mensagem apontando `/reversa-requirements`
 2. Verifique a existência de `feature-dir/actions.md`
    2.1. Se ausente, aborte com mensagem apontando `/reversa-to-do`
-3. Tente ler `_reversa_sdd/architecture.md` e `_reversa_sdd/domain.md`
-   3.1. Se algum estiver ausente, avise o usuário que `legacy-impact.md` e `regression-watch.md` ficarão sem âncoras precisas e que ele tem três opções: rodar `/reversa` antes para extrair o legado, prosseguir mesmo assim, ou abortar
+3. Verifique o pré-requisito da extração reversa:
+   3.1. Se `_reversa_sdd/` não existir como diretório, aborte com a mensagem:
+
+       > 🛑 `/reversa-coding` exige a pipeline reversa executada antes. A pasta `_reversa_sdd/` não foi encontrada.
+       >
+       > Execute `/reversa` para gerar a extração do legado e depois volte para cá. Sem esse contexto, `legacy-impact.md` e `regression-watch.md` ficariam sem âncora e o ciclo forward perderia seu diferencial.
+
+   3.2. Se `_reversa_sdd/` existir mas faltar `architecture.md`, aborte com a mensagem:
+
+       > 🛑 `/reversa-coding` exige `_reversa_sdd/architecture.md` (gerado pelo Architect na pipeline reversa). O arquivo está ausente, talvez a extração tenha sido parcial.
+       >
+       > Execute `/reversa` em modo completo (mínimo `essencial`) e volte para cá.
+
+   3.3. Se `_reversa_sdd/architecture.md` existir mas faltar `_reversa_sdd/domain.md`, aborte com a mensagem:
+
+       > 🛑 `/reversa-coding` exige `_reversa_sdd/domain.md` (gerado pelo Detective na pipeline reversa). O arquivo está ausente.
+       >
+       > Execute `/reversa` para completar a extração e volte para cá.
+
+   3.4. Em todos os casos do passo 3, NÃO crie `legacy-impact.md`, NÃO crie `regression-watch.md`, NÃO toque em `actions.md`, NÃO escreva `progress.jsonl`. Apenas relate e encerre.
+
 4. Aplique `before-coding` da forma padrão
 
 ## Escopo da rodada

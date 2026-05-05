@@ -98,18 +98,22 @@ Aguarde a resposta. NÃO escolha por conta própria, NÃO interprete silêncio c
 
 1. Leia o `active-requirements.json` atual e o campo `paused-features`
    1.1. Se o campo não existir, considere `paused-features: []`
-2. Construa entrada de pausa para a feature anterior:
+2. Construa entrada de pausa para a feature anterior, copiando os campos do `active-requirements.json` atual e acrescentando os dois campos de pausa:
 
 ```json
 {
   "feature-dir": "<feature-dir relativo>",
   "feature-id": "<NNN>",
   "short-name": "<short-name>",
+  "started-at": "<ISO 8601 do active-requirements.json atual>",
+  "current-stage": "<valor atual do campo, mesmo sendo metadado informativo>",
+  "stages-completed": [],
   "paused-at": "<ISO 8601 da hora atual>",
   "paused-from-stage": "<estágio físico detectado: requirements | plan | coding-em-progresso>"
 }
 ```
 
+   2.1. Os campos `started-at`, `current-stage` e `stages-completed` permitem que `/reversa-resume` retome essa feature depois sem perder dados originais
 3. Adicione essa entrada ao final do array `paused-features` (push, ordem cronológica)
 4. Siga normalmente para "Resolução do diretório da feature". Ao escrever o `active-requirements.json` novo (passo 5 daquela seção), INCLUA o array `paused-features` atualizado no JSON
 
