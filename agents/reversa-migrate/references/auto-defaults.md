@@ -16,7 +16,8 @@ Quando o usuário invoca `/reversa-migrate --auto`, o orquestrador pula pausas h
 - Riscos `crítico` que dependeriam de owner humano ficam com `owner = "a definir"` em `risk_register.md`.
 
 ## Designer
-- Aprova a primeira proposta de arquitetura, sem iteração.
+- **Topologia (Fase 1)**: aceita a topologia moderna proposta (opção 2). Justificativa registrada em `topology_decision.md` é a do próprio Designer; no `ambiguity_log.md` fica a tag `auto-decidido` para revisão posterior. Rationale: `--auto` é para usuários que querem o caminho recomendado; refusing-to-decide pararia o pipeline e violaria o contrato de `--auto`.
+- **Arquitetura (Fase 2)**: aprova a primeira proposta sem iteração.
 - Bounded contexts, eventos e ADRs são aceitos como propostos.
 
 ## Inspector
@@ -34,7 +35,8 @@ Sempre antes de iniciar `--auto`, apresentar:
 > - Paradigm Advisor: adotar paradigma natural da stack (transformacional).
 > - Curator: itens ⚠️/🔴 serão DESCARTADOS com nota; 🟡 serão MIGRADOS com nota.
 > - Strategist: estratégia recomendada será adotada.
-> - Designer: primeira proposta de arquitetura será aceita.
+> - Designer (topologia): topologia moderna proposta será adotada (opção 2).
+> - Designer (arquitetura): primeira proposta de arquitetura será aceita.
 > - Inspector: critérios de paridade derivados do paradigma sem ajuste interativo.
 >
 > O `handoff.md` final destacará todos os itens auto-decididos para revisão posterior.

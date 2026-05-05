@@ -16,6 +16,11 @@ Reversa works with the leading AI engines on the market. The installer automatic
 | **Antigravity** | `AGENTS.md` | `.agents/skills/reversa-*/` | `/reversa` |
 | **Kiro** | (none) | `.kiro/skills/reversa-*/` and `.agents/skills/reversa-*/` | `/reversa` |
 | **Opencode** | `AGENTS.md` | `.agents/skills/reversa-*/` | `reversa` |
+| **Cline** | `.clinerules` | `.agents/skills/reversa-*/` | `/reversa` |
+| **Roo Code** | `.roorules` | `.agents/skills/reversa-*/` | `/reversa` |
+| **GitHub Copilot** | `.github/copilot-instructions.md` | `.agents/skills/reversa-*/` | `/reversa` |
+| **Aider** | `CONVENTIONS.md` | `.agents/skills/reversa-*/` | `reversa` |
+| **Amazon Q Developer** | `.amazonq/rules/reversa.md` | `.agents/skills/reversa-*/` | `/reversa` |
 
 ---
 
@@ -58,6 +63,30 @@ Amazon's agentic IDE. Kiro natively discovers skills in `.kiro/skills/`, no stee
 ## Opencode
 
 Open source coding agent for the terminal (SST). Reads `AGENTS.md` natively, same convention as Codex. CLI command: `opencode`. Like Codex, activation is by agent name: `reversa`.
+
+---
+
+## Cline and Roo Code
+
+VS Code extensions with custom rules support via `.clinerules` and `.roorules` respectively. The pattern is identical to Cursor and Windsurf: a rules file at the project root that instructs the agent when activating `/reversa`.
+
+---
+
+## GitHub Copilot
+
+Uses `.github/copilot-instructions.md` as a custom instructions file, automatically read by Copilot in every session. The installer creates the file inside `.github/` (which may already exist in the project).
+
+---
+
+## Aider
+
+Coding agent for the terminal. The entry file `CONVENTIONS.md` at the root is passed via `--read CONVENTIONS.md` or configured in `.aider.conf.yml`. Like Codex and Opencode, activation is by name: `reversa`.
+
+---
+
+## Amazon Q Developer
+
+AWS AI CLI. Uses rules in `.amazonq/rules/` to instruct the agent per project. The installer creates `.amazonq/rules/reversa.md` without interfering with other rules you may already have in that folder.
 
 ---
 

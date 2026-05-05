@@ -51,12 +51,14 @@ Execute estritamente nesta ordem:
 ### Passo 2: Estado e modo
 
 1. Se `_reversa_sdd/migration/.state.json` **não existir**: este é primeiro run; siga para o passo 3.
-2. Se existir: leia. Identifique `currentAgent`, `completedAgents`. Pergunte ao usuário:
-   > "Encontrei uma migração em andamento. Concluído: <agentes>. Pendente: <agentes>.
-   > 1. Continuar de onde parou (`--resume`)
-   > 2. Recriar tudo (`--regenerate=paradigm_advisor`)
-   > 3. Recriar a partir de um agente específico
-   > 4. Cancelar"
+2. Se existir: leia. Identifique `currentAgent.agent`, `currentAgent.phase`, `currentAgent.status`, `completedAgents`.
+   - **Caso especial: pausa intra-agente pendente.** Se `currentAgent.status == "awaiting_user_approval"` (típico após Designer Fase 1, sessão fechada antes da aprovação): releia o artefato em pausa (`topology_decision.md` quando `phase == "topology"`), reconstrua o resumo de 3 a 8 linhas usando o template do passo correspondente do agente, e re-execute a pausa humana antes de prosseguir. Não ofereça menu de opções até resolver a pausa.
+   - **Caso normal**, pergunte ao usuário:
+     > "Encontrei uma migração em andamento. Concluído: <agentes>. Pendente: <agentes>.
+     > 1. Continuar de onde parou (`--resume`)
+     > 2. Recriar tudo (`--regenerate=paradigm_advisor`)
+     > 3. Recriar a partir de um agente específico
+     > 4. Cancelar"
 3. **Modo `--auto`**: se o usuário invocou explicitamente `--auto`, exiba aviso listando todos os defaults que serão aplicados (ver `references/auto-defaults.md`) e peça confirmação antes de prosseguir.
 
 ### Passo 3: Coleta do brief (entrevista)
@@ -79,7 +81,15 @@ Renderize `_reversa_sdd/migration/migration_brief.md` usando o template em `refe
 
 ### Passo 4: Inicializar `.state.json`
 
-Crie `_reversa_sdd/migration/.state.json` a partir do template `references/state.json`. Preencha `startedAt`, `engine`, `reversaVersion`. Marque `currentAgent = "paradigm_advisor"`.
+Crie `_reversa_sdd/migration/.state.json` a partir do template `references/state.json`. Preencha `startedAt`, `engine`, `reversaVersion`. Marque `currentAgent.agent = "paradigm_advisor"`, `currentAgent.phase = null`, `currentAgent.status = "running"`, `currentAgent.topologyApproved = false`.
+
+**Contrato do `currentAgent`** (objeto, não string):
+- `agent`: id do agente atualmente ativo (`paradigm_advisor` | `curator` | `strategist` | `designer` | `inspector` | `null` quando ocioso).
+- `phase`: nome da sub-fase (apenas quando o agente declara fases; ex: `"topology"` ou `"architecture"` para o Designer; `null` para os demais).
+- `status`: `running` | `awaiting_user_approval` | `complete` | `failed`.
+- `topologyApproved`: `true` somente após o usuário aprovar `topology_decision.md`. Persiste durante toda a vida da migração; é fonte única de verdade.
+
+Ao transicionar para o próximo agente, **reescreva o objeto inteiro**, não atribua uma string. Ao mover um agente para `completedAgents`, defina `currentAgent.agent` para o próximo da fila (ou `null` ao final), reset `phase` e `status`, e **preserve** `topologyApproved` (ele não pertence à transição de agente).
 
 ### Passo 5: Executar os 5 agentes em sequência
 
@@ -87,16 +97,33 @@ Para cada agente, faça:
 
 1. Anuncie ao usuário: `"Iniciando o **<Agente>**, <responsabilidade curta>."`.
 2. Ative a skill do agente (`reversa-paradigm-advisor`, `reversa-curator`, `reversa-strategist`, `reversa-designer`, `reversa-inspector`). Se a engine não suportar ativação direta por nome, instrua a leitura de `.agents/skills/<id>/SKILL.md` no contexto atual.
-3. Aguarde a conclusão e os artefatos previstos.
+3. Aguarde a conclusão **ou** um checkpoint intra-agente (ver passo 5b). Se for conclusão, valide os artefatos previstos.
 4. Atualize `.state.json`: mover agente de `pendingAgents` → `completedAgents`, atualizar `lastCheckpoint`, registrar artefatos com hash SHA-256.
 5. **Pausa humana** (ver passo 6) antes de prosseguir, conforme tabela abaixo.
+
+#### Passo 5b: Checkpoint intra-agente (Designer Fase 1)
+
+Alguns agentes operam em fases com pausa humana entre elas. Atualmente, apenas o **Designer** se comporta assim: na Fase 1 produz `topology_decision.md` e devolve controle sem entrar na Fase 2.
+
+Fluxo:
+
+1. Designer roda Fase 1, escreve `topology_decision.md` e devolve controle ao orquestrador com sinal `phase: topology, status: awaiting_user_approval`.
+2. Orquestrador grava em `.state.json` o campo `currentAgent.phase = "topology"` e `currentAgent.status = "awaiting_user_approval"`. **Não** move Designer para `completedAgents`.
+3. Orquestrador executa a pausa humana descrita no passo 6 (linha "Designer (Fase 1)" da tabela).
+4. Após aprovação do usuário, orquestrador registra em `.state.json` `currentAgent.topologyApproved = true`. Esta é a fonte única de verdade da aprovação; **não** duplicar no front-matter de `topology_decision.md`.
+5. Orquestrador **re-ativa o mesmo agente Designer**. O agente, ao iniciar, detecta que `topology_decision.md` existe e está aprovado e pula direto para a Fase 2 (passo 8 do procedimento do Designer).
+6. Ao concluir a Fase 2, Designer devolve controle com `status: complete`. Orquestrador então roda a pausa "Designer (Fase 2)" da tabela.
+7. Se o usuário pedir ajustes em **qualquer** das duas fases, orquestrador re-ativa Designer apontando explicitamente qual fase deve ser refeita (`--regenerate-phase=topology` ou `--regenerate-phase=architecture`); o agente respeita e descarta artefatos da fase em diante.
+
+Esse mecanismo é genérico: outros agentes podem adotá-lo no futuro, declarando seus checkpoints na seção "Fases" do próprio SKILL.md.
 
 | Após o agente | Pausa para |
 |---|---|
 | Paradigm Advisor | Confirmar paradigma e gap |
 | Curator | Revisar itens DECISÃO HUMANA |
 | Strategist | Escolher estratégia |
-| Designer | Aprovar arquitetura (se ajustes, Designer roda novamente) |
+| Designer (Fase 1) | Aprovar `topology_decision.md` (preservar / modernizar / híbrido) antes de detalhar arquitetura |
+| Designer (Fase 2) | Aprovar arquitetura (se ajustes, Designer roda novamente) |
 | Inspector | (sem pausa; segue para handoff) |
 
 ### Passo 6: Pausa humana (`human_decision_gate`)
@@ -127,7 +154,7 @@ Após Inspector concluir e `ambiguity_log` consolidado:
 
 1. Renderize `_reversa_sdd/migration/handoff.md` usando o template em `references/templates/handoff.md`.
 2. Liste todos os artefatos produzidos.
-3. **Destaque `paradigm_decision.md` como leitura obrigatória primeiro**.
+3. **Destaque `paradigm_decision.md` e `topology_decision.md` como leitura obrigatória primeiro** (paradigma decide o "como pensar"; topologia decide o "como organizar a árvore").
 4. Liste itens REFERIDOS À CODIFICAÇÃO em seção dedicada.
 5. Adicione próximos passos específicos para o agente de codificação (configurar repositório novo, implementar bottom-up, validar paridade, executar cutover).
 6. Em modo `--auto`: liste itens auto-decididos para revisão posterior.
@@ -151,17 +178,20 @@ Grave log completo em `_reversa_sdd/migration/.logs/<timestamp>-migrate.log` com
 ### `--resume`
 
 1. Leia `.state.json`.
-2. Identifique `currentAgent`.
-3. Confirme com o usuário antes de retomar.
-4. Continue do agente seguinte (ou do próprio se ele estava `failed`).
+2. Identifique `currentAgent.agent`, `currentAgent.phase` e `currentAgent.status`.
+3. Se `currentAgent.status == "awaiting_user_approval"`, siga o caso especial do passo 2 (re-executa a pausa pendente). Caso contrário, confirme com o usuário antes de retomar.
+4. Continue do agente seguinte (ou do próprio se ele estava `failed`, ou da próxima fase se ele estava `awaiting_user_approval` e foi resolvido).
 
-### `--regenerate=<agent>`
+### `--regenerate=<agent>` ou `--regenerate=designer:<phase>`
 
 1. Confirme com o usuário (operação destrutiva no escopo de `_reversa_sdd/migration/`).
 2. Faça backup em `_reversa_sdd/migration/.backup-<timestamp>/`.
-3. Apague artefatos do agente especificado **e de todos os agentes posteriores** na ordem do pipeline.
-4. Atualize `.state.json` removendo agentes do `completedAgents` e marcando `currentAgent`.
-5. Rode a partir do agente especificado.
+3. Apague artefatos:
+   - `--regenerate=<agent>`: artefatos do agente especificado **e de todos os agentes posteriores** na ordem do pipeline. Para o Designer, isso inclui `topology_decision.md` e reseta `currentAgent.topologyApproved = false`.
+   - `--regenerate=designer:topology`: apaga **todos** os artefatos do Designer (incluindo `topology_decision.md`) e reseta `currentAgent.topologyApproved = false`. Equivalente a `--regenerate=designer` mas explícito sobre voltar à Fase 1.
+   - `--regenerate=designer:architecture`: apaga apenas os artefatos da Fase 2 (`target_architecture.md`, `target_domain_model.md`, `target_data_model.md`, `data_migration_plan.md`). **Preserva** `topology_decision.md` e `currentAgent.topologyApproved`. Designer é re-ativado e detecta que deve pular para a Fase 2.
+4. Atualize `.state.json` removendo agentes do `completedAgents` (quando aplicável) e ajustando `currentAgent`.
+5. Re-ative o Designer (ou o agente especificado) com a flag de fase, se aplicável.
 
 ### `--auto`
 
@@ -201,6 +231,7 @@ _reversa_sdd/
     ├── migration_strategy.md
     ├── risk_register.md
     ├── cutover_plan.md
+    ├── topology_decision.md
     ├── target_architecture.md
     ├── target_domain_model.md
     ├── target_data_model.md
