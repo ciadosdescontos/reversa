@@ -34,6 +34,16 @@ Installed by default, but can be triggered independently at any time.
 
 ---
 
+## Translators (input adapters)
+
+Use when the legacy "code" is not source code, but a structured artifact like a visual workflow. Generates an SDD spec and prepares the state for the main pipeline to take over.
+
+| Agent | Analogy | When to use |
+|-------|---------|-------------|
+| [N8N Translator](n8n.md) | The certified translator | When you have an N8N workflow exported as JSON and want to document it as a spec or port to Python |
+
+---
+
 ## Recommended sequence
 
 ```

@@ -126,6 +126,14 @@ Independent agents (run at any phase): **Visor**, **Data Master**, **Design Syst
 | **Design System** | Extracts design tokens: colors, typography, spacing, themes, and components |
 | **Chronicler** | Documents code changes during development sessions |
 
+### Translators (input adapters)
+
+Use when the legacy "code" is not source code but a structured artifact like a visual workflow. Generates the SDD spec and prepares the state for the main pipeline to take over.
+
+| Agent | Role |
+|-------|------|
+| **N8N Translator** | Reads N8N workflows exported as JSON and produces SDD specs ready for Python reimplementation. Activated via `/reversa-n8n` |
+
 ---
 
 ## What is generated

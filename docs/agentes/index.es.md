@@ -28,6 +28,16 @@ Reversa coordina un equipo de 14 especialistas. Cada agente hace una cosa y la h
 
 ---
 
+## Traductores (adaptadores de entrada)
+
+Use cuando el "código" heredado no sea código fuente, sino un artefacto estructurado como un workflow visual. Generan una spec SDD y preparan el estado para que el pipeline principal continúe.
+
+| Agente | Analogía | Cuándo usar |
+|--------|----------|-------------|
+| [N8N Translator](n8n.md) | El traductor jurado | Cuando tengas un workflow N8N exportado en JSON y quieras documentarlo como spec o portar a Python |
+
+---
+
 ## Secuencia recomendada
 
 ```

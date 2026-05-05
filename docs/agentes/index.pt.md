@@ -34,6 +34,16 @@ Instalados por padrão, mas podem ser acionados de forma independente em qualque
 
 ---
 
+## Tradutores (adaptadores de entrada)
+
+Use quando o "código" legado não for código-fonte, e sim um artefato estruturado como um workflow visual. Geram uma spec SDD e preparam o estado para o pipeline principal continuar.
+
+| Agente | Analogia | Quando usar |
+|--------|----------|-------------|
+| [N8N Translator](n8n.md) | O tradutor juramentado | Quando tiver um workflow N8N exportado em JSON e quiser documentá-lo como spec ou portar para Python |
+
+---
+
 ## Sequência recomendada
 
 ```
