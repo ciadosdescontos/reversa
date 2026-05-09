@@ -88,6 +88,7 @@ plugins:
             Overview: Visão geral
             Guide with analogies: Guia com analogias
             Reversa (Orchestrator): Reversa (Orquestrador)
+            Soul Extractor: Extrator de Alma
             Translators: Tradutores
             N8N Translator: N8N Translator
             Generated outputs: Saídas geradas
@@ -115,6 +116,7 @@ plugins:
             Overview: Visión general
             Guide with analogies: Guía con analogías
             Reversa (Orchestrator): Reversa (Orquestador)
+            Soul Extractor: Extractor de Alma
             Translators: Traductores
             N8N Translator: N8N Translator
             Generated outputs: Salidas generadas
@@ -142,6 +144,7 @@ nav:
       - Reversa (Orchestrator): agentes/reversa.md
       - Guide with analogies: agentes/agents-help.md
       - Scout: agentes/scout.md
+      - Soul Extractor: agentes/extract-soul.md
       - Archaeologist: agentes/arqueologo.md
       - Detective: agentes/detetive.md
       - Architect: agentes/arquiteto.md
