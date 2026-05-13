@@ -22,17 +22,101 @@ Você é o orquestrador do ciclo forward do Reversa. Sua missão é olhar o esta
 2. Quando o texto deste skill mencionar `_reversa_sdd/` ou `_reversa_forward/`, use os valores reais resolvidos do state.json
 3. Se `state.json` não existir, trate como `_reversa_sdd/` e `_reversa_forward/` literais e siga adiante
 
-## Pré-requisito da extração reversa
+## Contexto de extração reversa
 
-1. Verifique se `_reversa_sdd/` existe e contém pelo menos um artefato (qualquer arquivo `.md`)
-   1.1. Se NÃO existir ou estiver vazio, aborte com mensagem:
+O pipeline forward funciona em dois cenários:
 
-       > 🛑 O ciclo forward depende dos artefatos extraídos do sistema legado.
-       >
-       > Rode `/reversa` antes para mapear o projeto. Quando a extração terminar, volte aqui.
+1. **Evolução de legado:** existe `_reversa_sdd/` com artefatos da extração reversa. Os skills do pipeline (especialmente `/reversa-requirements` e `/reversa-plan`) vão ancorar decisões nesses artefatos.
+2. **Projeto novo (greenfield):** não existe `_reversa_sdd/` ainda. O pipeline forward continua valendo, só perde a ancoragem no legado.
 
-   1.2. Se existir mas estiver vazio (sem nenhum `.md`), trate como ausente
-2. NÃO bloqueie por causa de artefatos opcionais ausentes (data-delta, design-system, etc.), basta haver evidência de que `/reversa` rodou ao menos uma vez
+NÃO bloqueie em nenhum caso. Verifique e prepare a estrutura seguindo as MESMAS regras de criação de pastas que o `/reversa` original aplica:
+
+1. Resolva os paths reais a partir de `.reversa/state.json`:
+   1.1. `output_folder` (padrão `_reversa_sdd`)
+   1.2. `forward_folder` (padrão `_reversa_forward`)
+2. Se a pasta `output_folder` existe e contém pelo menos um arquivo `.md`, registre internamente o cenário como **legado** e diga ao usuário: "Extração reversa detectada, o pipeline vai ancorar decisões em `<output_folder>/`."
+3. Se a pasta `output_folder` NÃO existe ou está vazia, registre internamente como **greenfield** e:
+   3.1. Crie a pasta `<output_folder>/` (criação recursiva, equivalente a `mkdir -p`)
+   3.2. Crie também a pasta `<forward_folder>/` se ainda não existir (pelo mesmo método)
+   3.3. NÃO crie nenhum arquivo dentro dessas pastas. Sem `.gitkeep`, sem placeholders. A pasta `output_folder` já está no `.gitignore` (gerenciado pelo installer), criar arquivos só introduziria ruído
+   3.4. NÃO altere `.reversa/state.json#created_files` nem `.gitignore`, isso é responsabilidade do installer e do `/reversa` original, não deste skill
+   3.5. Comunique ao usuário: "Sem extração reversa neste projeto, vou operar em modo greenfield. Criei `<output_folder>/` e `<forward_folder>/` para que os skills do pipeline possam escrever artefatos quando precisarem. Se quiser ancorar em legado depois, rode `/reversa` a qualquer momento."
+
+Princípios herdados do `/reversa` original (não viole):
+
+- Use sempre o valor real de `output_folder` e `forward_folder` do `state.json`, jamais o literal `_reversa_sdd` ou `_reversa_forward`
+- Não toque em pasta ou arquivo do projeto fora de `.reversa/`, `<output_folder>/` e `<forward_folder>/`
+- Nunca sobrescreva: crie só se ausente
+
+## Organização das specs
+
+Mesmo no caminho greenfield, o pipeline precisa saber como as specs serão organizadas. Essa decisão é a mesma que o `/reversa` original toma logo após o Scout, e fica persistida em `.reversa/config.toml`, seção `[specs]`. Se já estiver decidida (legado com `/reversa` já executado), pule este passo. Caso contrário, faça o menu agora.
+
+### 1. Verificar estado da decisão
+
+1. Leia `.reversa/config.toml`, seção `[specs]`, e mescle chave a chave com `.reversa/config.user.toml#[specs]` (override do usuário tem precedência)
+2. A seção é considerada **decidida** quando, após a mescla, `granularity` está preenchida com um dos valores válidos: `module`, `use-case`, `endpoint`, `hybrid`, `feature`, `custom`
+3. Se decidida, pule para a próxima seção do skill (Detecção do estágio físico)
+4. Se há override em `config.user.toml` mas `config.toml` está sem `granularity`, avise o usuário antes de exibir o menu, conforme regra RF-18 do `/reversa`. Listar as chaves do override e pedir confirmação. Resposta negativa aborta sem persistir nada
+
+### 2. Apresentar o menu
+
+No caminho greenfield NÃO há `surface.json` (Scout não rodou). Apresente o menu sem pré-marcar opção. Se for legado e existir `.reversa/context/surface.json` com `organization_suggestion.granularity`, pré-marque a sugestão e mostre a `rationale`.
+
+Use exatamente este formato (idioma seguindo `chat_language`):
+
+```
+Como você quer organizar as specs deste projeto?
+
+  [1] Por módulo de código
+  [2] Por caso de uso
+  [3] Por endpoint/contrato
+  [4] Híbrida (módulo na raiz, casos de uso aninhados)
+  [5] Por features
+  [6] Customizada
+
+Escolha (1 a 6):
+```
+
+Em modo legado com sugestão disponível, acrescente `(sugerido)` na opção pré-marcada e aceite Enter como confirmação dela.
+
+Mapeamento das 6 opções para `granularity`:
+
+| Opção | `granularity` |
+|-------|---------------|
+| 1 | `module` |
+| 2 | `use-case` |
+| 3 | `endpoint` |
+| 4 | `hybrid` |
+| 5 | `feature` |
+| 6 | `custom` |
+
+Se o usuário escolher 6, pergunte: "Quais são os nomes das pastas de primeiro nível? Liste separados por vírgula ou um por linha (mínimo 1)." Sanitize cada nome (descartando caracteres proibidos pelo OS) e descarte vazios. Se a lista resultar vazia, repita a pergunta.
+
+Entradas inválidas devem ser rejeitadas pedindo de novo. Cancelamento (Ctrl+C) aborta sem persistir.
+
+### 3. Persistir a decisão (atomic write)
+
+Atualize `.reversa/config.toml`, seção `[specs]`:
+
+```toml
+[specs]
+layout = "feature-folder"
+granularity = "<escolha>"
+custom_folders = [<lista>]
+scout_suggestion = "<organization_suggestion.granularity do surface.json, ou vazio em greenfield>"
+decided_at = "<timestamp ISO 8601 UTC>"
+```
+
+Regras:
+
+- **Atomic write:** escrever em `config.toml.tmp` no mesmo diretório e rename atômico para `config.toml`
+- **Non-destructive:** preserve todas as outras seções (`[project]`, `[user]`, `[output]`, `[agents]`, `[engines]`, `[analysis]`)
+- **Não toque em `.reversa/config.user.toml`**, pertence ao usuário
+- **`scout_suggestion` é imutável:** se já estiver preenchido, preserve. Em primeira execução greenfield, salve vazio
+- Falha de IO: exiba erro claro, não considere a decisão confirmada, o usuário pode tentar de novo na próxima execução
+
+Após a persistência bem-sucedida, prossiga com a detecção do estágio físico.
 
 ## Detecção do estágio físico
 
@@ -123,9 +207,12 @@ Se houver `paused-features` com entradas, em qualquer estado, acrescente uma lin
 
 ## Regra de não escrita
 
-O `/reversa-forward` NÃO escreve em `active-requirements.json`, NÃO cria `feature-dir`, NÃO toca em `_reversa_sdd/` nem em `_reversa_forward/`. Toda gravação de artefato de feature é responsabilidade do skill seguinte. Você apenas lê e roteia.
+O `/reversa-forward` NÃO escreve em `active-requirements.json`, NÃO cria `feature-dir`, NÃO modifica artefatos dentro de `_reversa_sdd/` nem de `_reversa_forward/`. Toda gravação de artefato de feature é responsabilidade do skill seguinte. Você apenas lê e roteia.
 
-A única exceção é a leitura/escrita opcional de `.reversa/state.json` para gravar o nome do usuário caso ainda não esteja preenchido. Mesmo isso é opcional, não bloqueia.
+Exceções permitidas, sempre criação de coisa que ainda não existe, jamais sobrescrita:
+
+1. Criar a pasta `_reversa_sdd/` (com `.gitkeep`) se ela estiver ausente, conforme a seção "Contexto de extração reversa".
+2. Atualizar `.reversa/state.json` apenas se for para preencher o nome do usuário ainda em branco. Não toque em outros campos.
 
 ## Regra absoluta
 
